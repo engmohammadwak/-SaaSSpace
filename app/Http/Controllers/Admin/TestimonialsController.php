@@ -11,7 +11,7 @@ class TestimonialsController extends Controller
 {
     public function index()
     {
-        $testimonials = Testimonial::latest()->get();
+        $testimonials = Testimonial::orderBy('sort_order')->orderBy('created_at')->get();
         return view('admin.testimonials.index', compact('testimonials'));
     }
 
@@ -25,20 +25,23 @@ class TestimonialsController extends Controller
         $validated = $request->validate([
             'client_name'   => 'required|string|max:255',
             'client_title'  => 'required|string|max:255',
-            'client_avatar' => 'nullable|image|mimes:webp,png,jpg|max:2048',
             'content'       => 'required|string',
+            'client_avatar' => 'nullable|image|max:2048',
             'rating'        => 'required|integer|min:1|max:5',
-            'is_active'     => 'nullable|boolean',
         ]);
 
+        $validated['is_active']  = $request->boolean('is_active');
+        $validated['sort_order'] = $request->input('sort_order', 0);
+
         if ($request->hasFile('client_avatar')) {
-            $validated['client_avatar'] = $request->file('client_avatar')->store('testimonials', 'public');
+            $validated['client_avatar'] = $request->file('client_avatar')
+                ->store('testimonials', 'public');
         }
 
-        $validated['is_active'] = $request->has('is_active');
         Testimonial::create($validated);
 
-        return redirect()->route('admin.testimonials.index')->with('success', 'Testimonial created!');
+        return redirect()->route('admin.testimonials.index')
+            ->with('success', 'Testimonial added successfully!');
     }
 
     public function edit(Testimonial $testimonial)
@@ -51,27 +54,34 @@ class TestimonialsController extends Controller
         $validated = $request->validate([
             'client_name'   => 'required|string|max:255',
             'client_title'  => 'required|string|max:255',
-            'client_avatar' => 'nullable|image|mimes:webp,png,jpg|max:2048',
             'content'       => 'required|string',
+            'client_avatar' => 'nullable|image|max:2048',
             'rating'        => 'required|integer|min:1|max:5',
-            'is_active'     => 'nullable|boolean',
         ]);
 
+        $validated['is_active']  = $request->boolean('is_active');
+        $validated['sort_order'] = $request->input('sort_order', 0);
+
         if ($request->hasFile('client_avatar')) {
-            if ($testimonial->client_avatar) Storage::disk('public')->delete($testimonial->client_avatar);
-            $validated['client_avatar'] = $request->file('client_avatar')->store('testimonials', 'public');
+            if ($testimonial->client_avatar)
+                Storage::disk('public')->delete($testimonial->client_avatar);
+            $validated['client_avatar'] = $request->file('client_avatar')
+                ->store('testimonials', 'public');
         }
 
-        $validated['is_active'] = $request->has('is_active');
         $testimonial->update($validated);
 
-        return redirect()->route('admin.testimonials.index')->with('success', 'Testimonial updated!');
+        return redirect()->route('admin.testimonials.index')
+            ->with('success', 'Testimonial updated!');
     }
 
     public function destroy(Testimonial $testimonial)
     {
-        if ($testimonial->client_avatar) Storage::disk('public')->delete($testimonial->client_avatar);
+        if ($testimonial->client_avatar)
+            Storage::disk('public')->delete($testimonial->client_avatar);
         $testimonial->delete();
-        return redirect()->route('admin.testimonials.index')->with('success', 'Testimonial deleted!');
+
+        return redirect()->route('admin.testimonials.index')
+            ->with('success', 'Testimonial deleted.');
     }
 }

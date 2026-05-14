@@ -11,7 +11,7 @@ class ProjectsController extends Controller
 {
     public function index()
     {
-        $projects = Project::ordered()->get();
+        $projects = Project::orderBy('sort_order')->orderBy('created_at')->get();
         return view('admin.projects.index', compact('projects'));
     }
 
@@ -26,17 +26,19 @@ class ProjectsController extends Controller
             'title'       => 'required|string|max:255',
             'category'    => 'required|string|max:255',
             'description' => 'nullable|string',
-            'image'       => 'required|image|mimes:webp,png,jpg|max:5120',
-            'url'         => 'nullable|url',
-            'sort_order'  => 'nullable|integer',
-            'is_active'   => 'nullable|boolean',
+            'image'       => 'required|image|max:4096',
+            'url'         => 'nullable|url|max:500',
+            'sort_order'  => 'nullable|integer|min:0',
         ]);
 
-        $validated['image'] = $request->file('image')->store('projects', 'public');
-        $validated['is_active'] = $request->has('is_active');
+        $validated['is_active']  = $request->boolean('is_active');
+        $validated['sort_order'] = $request->input('sort_order', 0);
+        $validated['image']      = $request->file('image')->store('projects', 'public');
+
         Project::create($validated);
 
-        return redirect()->route('admin.projects.index')->with('success', 'Project created!');
+        return redirect()->route('admin.projects.index')
+            ->with('success', 'Project added successfully!');
     }
 
     public function edit(Project $project)
@@ -50,35 +52,31 @@ class ProjectsController extends Controller
             'title'       => 'required|string|max:255',
             'category'    => 'required|string|max:255',
             'description' => 'nullable|string',
-            'image'       => 'nullable|image|mimes:webp,png,jpg|max:5120',
-            'url'         => 'nullable|url',
-            'sort_order'  => 'nullable|integer',
-            'is_active'   => 'nullable|boolean',
+            'image'       => 'nullable|image|max:4096',
+            'url'         => 'nullable|url|max:500',
+            'sort_order'  => 'nullable|integer|min:0',
         ]);
+
+        $validated['is_active']  = $request->boolean('is_active');
+        $validated['sort_order'] = $request->input('sort_order', 0);
 
         if ($request->hasFile('image')) {
             if ($project->image) Storage::disk('public')->delete($project->image);
             $validated['image'] = $request->file('image')->store('projects', 'public');
         }
 
-        $validated['is_active'] = $request->has('is_active');
         $project->update($validated);
 
-        return redirect()->route('admin.projects.index')->with('success', 'Project updated!');
+        return redirect()->route('admin.projects.index')
+            ->with('success', 'Project updated successfully!');
     }
 
     public function destroy(Project $project)
     {
         if ($project->image) Storage::disk('public')->delete($project->image);
         $project->delete();
-        return redirect()->route('admin.projects.index')->with('success', 'Project deleted!');
-    }
 
-    public function reorder(Request $request)
-    {
-        foreach ($request->order as $index => $id) {
-            Project::where('id', $id)->update(['sort_order' => $index]);
-        }
-        return response()->json(['success' => true]);
+        return redirect()->route('admin.projects.index')
+            ->with('success', 'Project deleted.');
     }
 }

@@ -10,7 +10,7 @@ class PricingController extends Controller
 {
     public function index()
     {
-        $plans = PricingPlan::get();
+        $plans = PricingPlan::orderBy('sort_order')->orderBy('price')->get();
         return view('admin.pricing.index', compact('plans'));
     }
 
@@ -21,23 +21,29 @@ class PricingController extends Controller
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
+        $request->validate([
             'name'           => 'required|string|max:255',
             'price'          => 'required|numeric|min:0',
             'billing_period' => 'required|string|max:50',
             'features'       => 'required|string',
-            'btn_text'       => 'required|string|max:255',
-            'btn_url'        => 'required|string|max:255',
-            'is_featured'    => 'nullable|boolean',
-            'is_active'      => 'nullable|boolean',
+            'btn_text'       => 'required|string|max:100',
+            'btn_url'        => 'required|string|max:500',
         ]);
 
-        $validated['features']    = array_map('trim', explode('\n', $validated['features']));
-        $validated['is_featured'] = $request->has('is_featured');
-        $validated['is_active']   = $request->has('is_active');
+        PricingPlan::create([
+            'name'           => $request->name,
+            'price'          => $request->price,
+            'billing_period' => $request->billing_period,
+            'features'       => array_filter(array_map('trim', explode("\n", $request->features))),
+            'btn_text'       => $request->btn_text,
+            'btn_url'        => $request->btn_url,
+            'is_featured'    => $request->boolean('is_featured'),
+            'is_active'      => $request->boolean('is_active'),
+            'sort_order'     => $request->input('sort_order', 0),
+        ]);
 
-        PricingPlan::create($validated);
-        return redirect()->route('admin.pricing.index')->with('success', 'Plan created!');
+        return redirect()->route('admin.pricing.index')
+            ->with('success', 'Pricing plan created!');
     }
 
     public function edit(PricingPlan $pricing)
@@ -47,28 +53,35 @@ class PricingController extends Controller
 
     public function update(Request $request, PricingPlan $pricing)
     {
-        $validated = $request->validate([
+        $request->validate([
             'name'           => 'required|string|max:255',
             'price'          => 'required|numeric|min:0',
             'billing_period' => 'required|string|max:50',
             'features'       => 'required|string',
-            'btn_text'       => 'required|string|max:255',
-            'btn_url'        => 'required|string|max:255',
-            'is_featured'    => 'nullable|boolean',
-            'is_active'      => 'nullable|boolean',
+            'btn_text'       => 'required|string|max:100',
+            'btn_url'        => 'required|string|max:500',
         ]);
 
-        $validated['features']    = array_map('trim', explode('\n', $validated['features']));
-        $validated['is_featured'] = $request->has('is_featured');
-        $validated['is_active']   = $request->has('is_active');
+        $pricing->update([
+            'name'           => $request->name,
+            'price'          => $request->price,
+            'billing_period' => $request->billing_period,
+            'features'       => array_filter(array_map('trim', explode("\n", $request->features))),
+            'btn_text'       => $request->btn_text,
+            'btn_url'        => $request->btn_url,
+            'is_featured'    => $request->boolean('is_featured'),
+            'is_active'      => $request->boolean('is_active'),
+            'sort_order'     => $request->input('sort_order', 0),
+        ]);
 
-        $pricing->update($validated);
-        return redirect()->route('admin.pricing.index')->with('success', 'Plan updated!');
+        return redirect()->route('admin.pricing.index')
+            ->with('success', 'Plan updated!');
     }
 
     public function destroy(PricingPlan $pricing)
     {
         $pricing->delete();
-        return redirect()->route('admin.pricing.index')->with('success', 'Plan deleted!');
+        return redirect()->route('admin.pricing.index')
+            ->with('success', 'Plan deleted.');
     }
 }

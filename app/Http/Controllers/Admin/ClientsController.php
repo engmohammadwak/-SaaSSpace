@@ -11,7 +11,7 @@ class ClientsController extends Controller
 {
     public function index()
     {
-        $clients = Client::ordered()->get();
+        $clients = Client::orderBy('sort_order')->orderBy('created_at')->get();
         return view('admin.clients.index', compact('clients'));
     }
 
@@ -22,18 +22,21 @@ class ClientsController extends Controller
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
+        $request->validate([
             'name'       => 'required|string|max:255',
-            'logo'       => 'required|image|mimes:webp,png,jpg,svg|max:2048',
-            'sort_order' => 'nullable|integer',
-            'is_active'  => 'nullable|boolean',
+            'logo'       => 'required|image|max:2048',
+            'sort_order' => 'nullable|integer|min:0',
         ]);
 
-        $validated['logo']      = $request->file('logo')->store('clients', 'public');
-        $validated['is_active'] = $request->has('is_active');
-        Client::create($validated);
+        Client::create([
+            'name'       => $request->name,
+            'logo'       => $request->file('logo')->store('clients', 'public'),
+            'sort_order' => $request->input('sort_order', 0),
+            'is_active'  => $request->boolean('is_active'),
+        ]);
 
-        return redirect()->route('admin.clients.index')->with('success', 'Client added!');
+        return redirect()->route('admin.clients.index')
+            ->with('success', 'Client logo added!');
     }
 
     public function edit(Client $client)
@@ -43,36 +46,35 @@ class ClientsController extends Controller
 
     public function update(Request $request, Client $client)
     {
-        $validated = $request->validate([
+        $request->validate([
             'name'       => 'required|string|max:255',
-            'logo'       => 'nullable|image|mimes:webp,png,jpg,svg|max:2048',
-            'sort_order' => 'nullable|integer',
-            'is_active'  => 'nullable|boolean',
+            'logo'       => 'nullable|image|max:2048',
+            'sort_order' => 'nullable|integer|min:0',
         ]);
 
+        $data = [
+            'name'       => $request->name,
+            'sort_order' => $request->input('sort_order', 0),
+            'is_active'  => $request->boolean('is_active'),
+        ];
+
         if ($request->hasFile('logo')) {
-            if ($client->logo) Storage::disk('public')->delete($client->logo);
-            $validated['logo'] = $request->file('logo')->store('clients', 'public');
+            Storage::disk('public')->delete($client->logo);
+            $data['logo'] = $request->file('logo')->store('clients', 'public');
         }
 
-        $validated['is_active'] = $request->has('is_active');
-        $client->update($validated);
+        $client->update($data);
 
-        return redirect()->route('admin.clients.index')->with('success', 'Client updated!');
+        return redirect()->route('admin.clients.index')
+            ->with('success', 'Client updated!');
     }
 
     public function destroy(Client $client)
     {
-        if ($client->logo) Storage::disk('public')->delete($client->logo);
+        Storage::disk('public')->delete($client->logo);
         $client->delete();
-        return redirect()->route('admin.clients.index')->with('success', 'Client deleted!');
-    }
 
-    public function reorder(Request $request)
-    {
-        foreach ($request->order as $index => $id) {
-            Client::where('id', $id)->update(['sort_order' => $index]);
-        }
-        return response()->json(['success' => true]);
+        return redirect()->route('admin.clients.index')
+            ->with('success', 'Client deleted.');
     }
 }

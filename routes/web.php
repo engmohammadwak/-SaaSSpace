@@ -12,47 +12,38 @@ use App\Http\Controllers\Admin\ClientsController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\MediaController;
 
-// =====================
-// Frontend Routes
-// =====================
+// ─── Frontend ───────────────────────────────────────────────
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
-// =====================
-// Admin Routes (protected)
-// =====================
-Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () {
+// ─── Admin ──────────────────────────────────────────────────
+Route::prefix('admin')->name('admin.')->group(function () {
 
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
     // Hero
-    Route::resource('hero', HeroController::class)->only(['index', 'edit', 'update']);
+    Route::get('hero',           [HeroController::class, 'index'])->name('hero.index');
+    Route::put('hero',           [HeroController::class, 'update'])->name('hero.update');
 
     // Services
-    Route::resource('services', ServicesController::class);
-    Route::post('services/reorder', [ServicesController::class, 'reorder'])->name('services.reorder');
+    Route::resource('services',     ServicesController::class);
 
     // Projects (Case Studies)
-    Route::resource('projects', ProjectsController::class);
-    Route::post('projects/reorder', [ProjectsController::class, 'reorder'])->name('projects.reorder');
+    Route::resource('projects',     ProjectsController::class);
 
     // Testimonials
     Route::resource('testimonials', TestimonialsController::class);
 
     // Pricing
-    Route::resource('pricing', PricingController::class);
+    Route::resource('pricing',      PricingController::class);
 
-    // Clients (Logo Swiper)
-    Route::resource('clients', ClientsController::class);
-    Route::post('clients/reorder', [ClientsController::class, 'reorder'])->name('clients.reorder');
+    // Clients (Logos)
+    Route::resource('clients',      ClientsController::class);
 
-    // Site Settings
-    Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
-    Route::post('/settings', [SettingsController::class, 'update'])->name('settings.update');
+    // Settings
+    Route::get('settings',  [SettingsController::class, 'index'])->name('settings.index');
+    Route::put('settings',  [SettingsController::class, 'update'])->name('settings.update');
 
-    // Media Upload
-    Route::post('/media/upload', [MediaController::class, 'upload'])->name('media.upload');
-    Route::delete('/media/{id}', [MediaController::class, 'destroy'])->name('media.destroy');
+    // Media
+    Route::post('media/upload', [MediaController::class, 'upload'])->name('media.upload');
+    Route::delete('media/{media}', [MediaController::class, 'destroy'])->name('media.destroy');
 });
-
-// Auth routes
-require __DIR__.'/auth.php';

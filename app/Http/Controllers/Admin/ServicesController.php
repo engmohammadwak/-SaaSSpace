@@ -11,7 +11,7 @@ class ServicesController extends Controller
 {
     public function index()
     {
-        $services = Service::ordered()->get();
+        $services = Service::orderBy('sort_order')->orderBy('created_at')->get();
         return view('admin.services.index', compact('services'));
     }
 
@@ -25,19 +25,21 @@ class ServicesController extends Controller
         $validated = $request->validate([
             'title'       => 'required|string|max:255',
             'description' => 'required|string',
-            'icon'        => 'nullable|image|mimes:webp,png,jpg,svg|max:2048',
-            'sort_order'  => 'nullable|integer',
-            'is_active'   => 'nullable|boolean',
+            'icon'        => 'nullable|image|max:2048',
+            'sort_order'  => 'nullable|integer|min:0',
         ]);
+
+        $validated['is_active']   = $request->boolean('is_active');
+        $validated['sort_order']  = $request->input('sort_order', 0);
 
         if ($request->hasFile('icon')) {
             $validated['icon'] = $request->file('icon')->store('services', 'public');
         }
 
-        $validated['is_active'] = $request->has('is_active');
         Service::create($validated);
 
-        return redirect()->route('admin.services.index')->with('success', 'Service created!');
+        return redirect()->route('admin.services.index')
+            ->with('success', 'Service created successfully!');
     }
 
     public function edit(Service $service)
@@ -50,34 +52,30 @@ class ServicesController extends Controller
         $validated = $request->validate([
             'title'       => 'required|string|max:255',
             'description' => 'required|string',
-            'icon'        => 'nullable|image|mimes:webp,png,jpg,svg|max:2048',
-            'sort_order'  => 'nullable|integer',
-            'is_active'   => 'nullable|boolean',
+            'icon'        => 'nullable|image|max:2048',
+            'sort_order'  => 'nullable|integer|min:0',
         ]);
+
+        $validated['is_active']  = $request->boolean('is_active');
+        $validated['sort_order'] = $request->input('sort_order', 0);
 
         if ($request->hasFile('icon')) {
             if ($service->icon) Storage::disk('public')->delete($service->icon);
             $validated['icon'] = $request->file('icon')->store('services', 'public');
         }
 
-        $validated['is_active'] = $request->has('is_active');
         $service->update($validated);
 
-        return redirect()->route('admin.services.index')->with('success', 'Service updated!');
+        return redirect()->route('admin.services.index')
+            ->with('success', 'Service updated successfully!');
     }
 
     public function destroy(Service $service)
     {
         if ($service->icon) Storage::disk('public')->delete($service->icon);
         $service->delete();
-        return redirect()->route('admin.services.index')->with('success', 'Service deleted!');
-    }
 
-    public function reorder(Request $request)
-    {
-        foreach ($request->order as $index => $id) {
-            Service::where('id', $id)->update(['sort_order' => $index]);
-        }
-        return response()->json(['success' => true]);
+        return redirect()->route('admin.services.index')
+            ->with('success', 'Service deleted.');
     }
 }
