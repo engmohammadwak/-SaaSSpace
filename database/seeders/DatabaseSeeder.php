@@ -3,56 +3,43 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\User;
 use App\Models\HeroSection;
-use App\Models\Service;
 use App\Models\SiteSetting;
 
 class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // Admin user
-        User::factory()->create([
-            'name'  => 'SaaSSpace Admin',
-            'email' => 'admin@saasspace.co',
-        ]);
-
-        // Hero section
-        HeroSection::create([
-            'badge_text'         => 'Available for New Projects',
-            'main_title'         => 'We Craft High-Impact Designs for',
-            'rotating_texts'     => ['SaaS Products', 'AI Products', 'FinTech', 'E-Commerce', 'Real Estate', 'EdTech', 'MedTech'],
-            'description'        => 'We help SaaS companies with UI/UX, frontend development, branding, and web design that drive growth.',
-            'primary_btn_text'   => 'Book a Call',
-            'primary_btn_url'    => 'https://calendly.com/hello-saasspace/new-meeting',
-            'secondary_btn_text' => 'Case Studies',
-            'secondary_btn_url'  => 'https://www.behance.net/saasspacellc',
-        ]);
-
-        // Services
-        $services = [
-            ['title' => 'UI/UX Design',         'description' => 'We design beautiful and intuitive user interfaces for SaaS products.',            'sort_order' => 1],
-            ['title' => 'Frontend Development', 'description' => 'We build fast, responsive frontends using modern technologies.',                      'sort_order' => 2],
-            ['title' => 'Branding',              'description' => 'We create memorable brands that stand out in competitive markets.',                   'sort_order' => 3],
-            ['title' => 'Web Design',            'description' => 'We craft high-converting landing pages and websites for SaaS companies.',            'sort_order' => 4],
-        ];
-        foreach ($services as $service) {
-            Service::create($service);
+        // Hero Section
+        if (HeroSection::count() === 0) {
+            HeroSection::create([
+                'main_title'          => 'We Craft High-Impact Designs for',
+                'rotating_words'      => ['SaaS Startups', 'Creative Brands', 'Digital Products', 'Tech Companies'],
+                'description'         => 'We help ambitious brands stand out with stunning UI/UX design, motion graphics, and brand identity — built to convert.',
+                'primary_btn_text'    => 'Start a Project',
+                'primary_btn_url'     => '#contact',
+                'secondary_btn_text'  => 'View Our Work',
+                'secondary_btn_url'   => '#projects',
+                'video_url'           => null,
+                'is_active'           => true,
+            ]);
         }
 
-        // Site settings
-        $settings = [
-            'site_name'     => 'SaaSSpace',
-            'site_email'    => 'hello@saasspace.co',
-            'calendly_url'  => 'https://calendly.com/hello-saasspace/new-meeting',
-            'behance_url'   => 'https://www.behance.net/saasspacellc',
-            'instagram_url' => 'https://www.instagram.com/saasspacellc',
-            'dribbble_url'  => 'https://dribbble.com/hellorazzak',
-            'footer_text'   => '© 2025 SaaSSpace. All rights reserved.',
+        // Site Settings
+        $defaults = [
+            'site_name'         => 'SaaSSpace',
+            'tagline'           => 'Design That Converts',
+            'email'             => 'hello@saasspace.co',
+            'phone'             => '+1 (555) 000-0000',
+            'twitter_url'       => 'https://twitter.com/saasspace',
+            'linkedin_url'      => 'https://linkedin.com/company/saasspace',
+            'behance_url'       => 'https://behance.net/saasspace',
+            'instagram_url'     => 'https://instagram.com/saasspace',
+            'footer_text'       => '© 2025 SaaSSpace. All rights reserved.',
         ];
-        foreach ($settings as $key => $value) {
-            SiteSetting::create(['key' => $key, 'value' => $value]);
+
+        foreach ($defaults as $key => $value) {
+            SiteSetting::firstOrCreate(['key' => $key], ['value' => $value]);
         }
     }
 }
